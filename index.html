@@ -46,6 +46,16 @@
       Afegir pregunta
       <span style="font-size:16px; opacity:0.4">+</span>
     </button>
+
+    <button class="tab-btn" data-tab="jocs" onclick="canviarTab('jocs')">
+      Gestionar jocs
+      <span class="tab-badge" id="cnt-jocs">0</span>
+    </button>
+
+    <button class="tab-btn" data-tab="config" onclick="canviarTab('config')">
+      Parametres
+      <span style="font-size:16px; opacity:0.4">⚙</span>
+    </button>
   </div>
 
   <!-- Main -->
@@ -77,6 +87,11 @@
       </div>
       <div class="form-nova-wrap">
         <form id="form-nova" onsubmit="event.preventDefault(); crearNova();">
+
+          <div class="field">
+            <label>Joc</label>
+            <select id="nova-joc"></select>
+          </div>
 
           <div class="field">
             <label>Autor</label>
@@ -123,6 +138,47 @@
       </div>
     </div>
 
+    <div id="panel-jocs" class="panel">
+      <div class="main-header">
+        <h1>Gestionar jocs</h1>
+        <p>Crea blocs de preguntes i activa/desactiva'ls per contributor i joc.</p>
+      </div>
+      <div class="form-nova-wrap">
+        <form onsubmit="event.preventDefault(); crearJoc();">
+          <div class="field">
+            <label>Nom del joc</label>
+            <input type="text" id="joc-nom" placeholder="Ex: Festa 2026">
+          </div>
+          <button type="submit" class="btn-primary">Crear joc →</button>
+        </form>
+      </div>
+      <div id="llista-jocs" style="margin-top:16px"></div>
+    </div>
+
+    <div id="panel-config" class="panel">
+      <div class="main-header">
+        <h1>Parametres de joc</h1>
+        <p>Defineix temps i puntuacio base del joc.</p>
+      </div>
+      <div class="form-nova-wrap">
+        <form onsubmit="event.preventDefault(); desarConfiguracioJoc();">
+          <div class="field">
+            <label>Temps pregunta (s)</label>
+            <input type="text" id="cfg-temps" placeholder="20">
+          </div>
+          <div class="field">
+            <label>Punts base</label>
+            <input type="text" id="cfg-punts-base" placeholder="1000">
+          </div>
+          <div class="field">
+            <label>Bonus rapidesa max</label>
+            <input type="text" id="cfg-punts-rapidesa" placeholder="500">
+          </div>
+          <button type="submit" class="btn-primary">Desar parametres →</button>
+        </form>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -134,6 +190,11 @@
       <button class="btn-tancar-modal" onclick="tancarModal()">✕</button>
     </div>
     <input type="hidden" id="modal-tipus">
+
+    <div class="field">
+      <label>Joc</label>
+      <select id="modal-joc"></select>
+    </div>
 
     <div class="field">
       <label>Autor</label>

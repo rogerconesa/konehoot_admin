@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Konehoot · Administració</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Kone<span>hoot</span></div>
+    <p class="login-sub">Panell d'administració</p>
+    <div id="login-error">Contrasenya incorrecta</div>
+    <input type="password" id="pw" placeholder="Contrasenya">
+    <button class="btn-login" onclick="login()">Entrar →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      Kone<span>hoot</span>
+      <small>Admin</small>
+    </div>
+
+    <button class="tab-btn activa" data-tab="pendents" onclick="canviarTab('pendents')">
+      Pendents de revisió
+      <span class="tab-badge" id="cnt-pendents">0</span>
+    </button>
+
+    <button class="tab-btn" data-tab="aprovades" onclick="canviarTab('aprovades')">
+      Preguntes del joc
+      <span class="tab-badge zero" id="cnt-aprovades">0</span>
+    </button>
+
+    <button class="tab-btn" data-tab="nova" onclick="canviarTab('nova')">
+      Afegir pregunta
+      <span style="font-size:16px; opacity:0.4">+</span>
+    </button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Panel: Pendents -->
+    <div id="panel-pendents" class="panel" style="display:block">
+      <div class="main-header">
+        <h1>Pendents de revisió</h1>
+        <p>Aprova, edita o rebutja les preguntes enviades pels participants.</p>
+      </div>
+      <div id="llista-pendents"></div>
+    </div>
+
+    <!-- Panel: Aprovades -->
+    <div id="panel-aprovades" class="panel">
+      <div class="main-header">
+        <h1>Preguntes del joc</h1>
+        <p>Ordena les preguntes que entraran al joc. Les fletxes canvien l'ordre.</p>
+      </div>
+      <div id="llista-aprovades"></div>
+    </div>
+
+    <!-- Panel: Nova pregunta -->
+    <div id="panel-nova" class="panel">
+      <div class="main-header">
+        <h1>Afegir pregunta</h1>
+        <p>Crea una pregunta directament al joc sense passar per revisió.</p>
+      </div>
+      <div class="form-nova-wrap">
+        <form id="form-nova" onsubmit="event.preventDefault(); crearNova();">
+
+          <div class="field">
+            <label>Autor</label>
+            <input type="text" id="nova-autor" placeholder="Nom del participant">
+          </div>
+
+          <div class="field">
+            <label>Pregunta</label>
+            <textarea id="nova-pregunta" placeholder="Escriu la pregunta aquí…"></textarea>
+          </div>
+
+          <hr class="divider">
+
+          <div class="field">
+            <label>Les 4 respostes</label>
+            <div class="respostes-form">
+              <div class="resp-form-row">
+                <span class="resp-dot"></span>
+                <input type="text" id="nova-r1" placeholder="Resposta A">
+                <input type="radio" name="nova-correcta" value="0">
+              </div>
+              <div class="resp-form-row">
+                <span class="resp-dot"></span>
+                <input type="text" id="nova-r2" placeholder="Resposta B">
+                <input type="radio" name="nova-correcta" value="1">
+              </div>
+              <div class="resp-form-row">
+                <span class="resp-dot"></span>
+                <input type="text" id="nova-r3" placeholder="Resposta C">
+                <input type="radio" name="nova-correcta" value="2">
+              </div>
+              <div class="resp-form-row">
+                <span class="resp-dot"></span>
+                <input type="text" id="nova-r4" placeholder="Resposta D">
+                <input type="radio" name="nova-correcta" value="3">
+              </div>
+            </div>
+            <p class="radio-hint">Selecciona el cercle de la resposta correcta</p>
+          </div>
+
+          <hr class="divider">
+          <button type="submit" class="btn-primary">Afegir al joc →</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL EDICIÓ -->
+<div id="modal-overlay" onclick="if(event.target===this) tancarModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Editar pregunta</h2>
+      <button class="btn-tancar-modal" onclick="tancarModal()">✕</button>
+    </div>
+    <input type="hidden" id="modal-tipus">
+
+    <div class="field">
+      <label>Autor</label>
+      <input type="text" id="modal-autor">
+    </div>
+
+    <div class="field">
+      <label>Pregunta</label>
+      <textarea id="modal-pregunta" style="min-height:80px"></textarea>
+    </div>
+
+    <hr class="divider">
+
+    <div class="field">
+      <label>Les 4 respostes</label>
+      <div class="respostes-form">
+        <div class="resp-form-row">
+          <span class="resp-dot"></span>
+          <input type="text" id="modal-r1">
+          <input type="radio" name="modal-correcta" value="0">
+        </div>
+        <div class="resp-form-row">
+          <span class="resp-dot"></span>
+          <input type="text" id="modal-r2">
+          <input type="radio" name="modal-correcta" value="1">
+        </div>
+        <div class="resp-form-row">
+          <span class="resp-dot"></span>
+          <input type="text" id="modal-r3">
+          <input type="radio" name="modal-correcta" value="2">
+        </div>
+        <div class="resp-form-row">
+          <span class="resp-dot"></span>
+          <input type="text" id="modal-r4">
+          <input type="radio" name="modal-correcta" value="3">
+        </div>
+      </div>
+      <p class="radio-hint">Selecciona el cercle de la resposta correcta</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="tancarModal()">Cancel·lar</button>
+      <button class="btn-primary" onclick="desarModal()">Desar canvis →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+</body>
+</html>

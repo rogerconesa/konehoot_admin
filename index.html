@@ -3,11 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Konehoot · Administració</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
 <script type="module" src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
 </head>
 <body>
 
@@ -55,6 +64,11 @@
     <button class="tab-btn" data-tab="config" onclick="canviarTab('config')">
       Parametres
       <span style="font-size:16px; opacity:0.4">⚙</span>
+    </button>
+
+    <button class="tab-btn" data-tab="usuaris" onclick="canviarTab('usuaris')">
+      Usuaris
+      <span class="tab-badge" id="cnt-usuaris">0</span>
     </button>
   </div>
 
@@ -177,6 +191,14 @@
           <button type="submit" class="btn-primary">Desar parametres →</button>
         </form>
       </div>
+    </div>
+
+    <div id="panel-usuaris" class="panel">
+      <div class="main-header">
+        <h1>Usuaris contributor</h1>
+        <p>Edita o elimina usuaris erronis/duplicats.</p>
+      </div>
+      <div id="llista-usuaris"></div>
     </div>
 
   </div>

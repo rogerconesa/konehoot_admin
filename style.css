@@ -619,7 +619,47 @@ input[type="radio"]:hover { border-color: var(--accent); }
 
 /* Responsive */
 @media (max-width: 640px) {
-  .sidebar { display: none; }
+  #app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    display: flex;
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 10px 0;
+    overflow-x: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar-logo {
+    margin: 0 10px 0 16px;
+    padding: 6px 10px;
+    border-bottom: none;
+    font-size: 18px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo small {
+    display: none;
+  }
+
+  .tab-btn {
+    width: auto;
+    padding: 9px 12px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab-btn.activa::before {
+    display: none;
+  }
+
   .main { padding: 20px 16px; }
   .respostes-preview { grid-template-columns: 1fr; }
 }

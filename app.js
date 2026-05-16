@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, collection, query, orderBy, onSnapshot,
-  doc, updateDoc, deleteDoc, addDoc, serverTimestamp, writeBatch, getDocs, setDoc, getDoc
+  doc, updateDoc, deleteDoc, addDoc, serverTimestamp, writeBatch, getDocs, setDoc, getDoc, where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── CONFIGURA AQUÍ el teu projecte Firebase ──────────────────────────
@@ -60,6 +60,7 @@ const db  = getFirestore(app);
 let pendents   = [];
 let aprovades  = [];
 let jocs       = [];
+let usuaris    = [];
 let configJoc  = { tempsPregunta: 20, puntsBase: 1000, puntsRapidesa: 500 };
 let editantId  = null;
 let tabActiva  = 'pendents';
@@ -108,6 +109,15 @@ window.iniciarApp = function iniciarApp() {
     mostrarToast('No s\'han pogut carregar els jocs.', 'error');
   });
 
+  onSnapshot(query(collection(db, 'usuaris'), orderBy('nom', 'asc')), snap => {
+    usuaris = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderUsuaris();
+    actualitzarComptadors();
+  }, err => {
+    console.error('Error llegint usuaris:', err);
+    mostrarToast('No s\'han pogut carregar els usuaris.', 'error');
+  });
+
   carregarConfiguracioJoc();
 }
 
@@ -120,6 +130,8 @@ function actualitzarComptadors() {
   document.getElementById('cnt-aprovades').textContent = aprovades.length;
   const el = document.getElementById('cnt-jocs');
   if (el) el.textContent = jocs.length;
+  const elU = document.getElementById('cnt-usuaris');
+  if (elU) elU.textContent = usuaris.length;
 }
 
 // ── Canvi de tab ──────────────────────────────────────────────────────
@@ -132,6 +144,56 @@ window.canviarTab = function(tab) {
   document.getElementById('panel-nova').style.display      = tab === 'nova'      ? 'block' : 'none';
   document.getElementById('panel-jocs').style.display      = tab === 'jocs'      ? 'block' : 'none';
   document.getElementById('panel-config').style.display    = tab === 'config'    ? 'block' : 'none';
+  document.getElementById('panel-usuaris').style.display   = tab === 'usuaris'   ? 'block' : 'none';
+};
+
+function renderUsuaris() {
+  const container = document.getElementById('llista-usuaris');
+  if (!container) return;
+  if (!usuaris.length) {
+    container.innerHTML = '<div class="empty-state">Encara no hi ha usuaris registrats</div>';
+    return;
+  }
+  container.innerHTML = usuaris.map(u => `
+    <div class="card-pregunta">
+      <div class="card-meta">
+        <div style="font-family:var(--font-display);font-weight:700">${esc(u.nom || u.id)}</div>
+        <div class="card-actions">
+          <button class="btn-icon btn-editar-aprovar" onclick="editarUsuari('${u.id}')" title="Editar">✎</button>
+          <button class="btn-icon btn-rebutjar" onclick="eliminarUsuari('${u.id}')" title="Eliminar">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.editarUsuari = async function(id) {
+  const u = usuaris.find(x => x.id === id);
+  if (!u) return;
+  const nouNom = prompt('Nou nom d\'usuari', u.nom || '');
+  if (!nouNom) return;
+  const nomNet = nouNom.trim();
+  if (!nomNet) return;
+  const nomAntic = u.nom || '';
+  await updateDoc(doc(db, 'usuaris', id), { nom: nomNet, updatedAt: serverTimestamp() });
+
+  const batch = writeBatch(db);
+  const pPend = await getDocs(query(collection(db, 'preguntes_pendents'), where('autor', '==', nomAntic)));
+  pPend.forEach(d => batch.update(d.ref, { autor: nomNet }));
+  const pApr = await getDocs(query(collection(db, 'preguntes'), where('autor', '==', nomAntic)));
+  pApr.forEach(d => batch.update(d.ref, { autor: nomNet }));
+  const jugs = await getDocs(query(collection(db, 'partida', 'estat', 'jugadors'), where('nom', '==', nomAntic)));
+  jugs.forEach(d => batch.update(d.ref, { nom: nomNet }));
+  await batch.commit();
+  mostrarToast('Usuari actualitzat.', 'ok');
+};
+
+window.eliminarUsuari = async function(id) {
+  const u = usuaris.find(x => x.id === id);
+  if (!u) return;
+  if (!confirm(`Eliminar usuari ${u.nom || id}?`)) return;
+  await deleteDoc(doc(db, 'usuaris', id));
+  mostrarToast('Usuari eliminat.', 'ok');
 };
 
 function jocLabel(jocId, jocNom) {

@@ -443,6 +443,17 @@ body {
 
 .field textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
 
+.joc-actiu-label {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 11px 14px;
+  background: var(--bg);
+  color: var(--text);
+}
+
 .respostes-form { display: grid; gap: 8px; }
 
 .resp-form-row {

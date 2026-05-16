@@ -66,6 +66,10 @@ let editantId  = null;
 let tabActiva  = 'pendents';
 let appIniciada = false;
 
+function getJocActiu() {
+  return jocs.find(j => j.actiu !== false) || null;
+}
+
 function timestampToMillis(ts) {
   if (!ts) return 0;
   if (typeof ts.toMillis === 'function') return ts.toMillis();
@@ -250,13 +254,17 @@ function jocLabel(jocId, jocNom) {
 }
 
 function renderSelectorsJoc() {
-  const options = ['<option value="">Selecciona joc</option>']
-    .concat(jocs.filter(j => j.actiu !== false).map(j => `<option value="${j.id}">${esc(j.nom || j.id)}</option>`))
-    .join('');
+  const jocActiu = getJocActiu();
   const nova = document.getElementById('nova-joc');
   const modal = document.getElementById('modal-joc');
-  if (nova) nova.innerHTML = options;
-  if (modal) modal.innerHTML = options;
+  const novaLabel = document.getElementById('nova-joc-label');
+  const modalLabel = document.getElementById('modal-joc-label');
+  if (nova) nova.innerHTML = jocActiu ? `<option value="${jocActiu.id}">${esc(jocActiu.nom || jocActiu.id)}</option>` : '<option value="">No hi ha joc actiu</option>';
+  if (modal) modal.innerHTML = jocActiu ? `<option value="${jocActiu.id}">${esc(jocActiu.nom || jocActiu.id)}</option>` : '<option value="">No hi ha joc actiu</option>';
+  if (nova && jocActiu) nova.value = jocActiu.id;
+  if (modal && jocActiu) modal.value = jocActiu.id;
+  if (novaLabel) novaLabel.textContent = jocActiu ? (jocActiu.nom || jocActiu.id) : 'No hi ha cap joc actiu';
+  if (modalLabel) modalLabel.textContent = jocActiu ? (jocActiu.nom || jocActiu.id) : 'No hi ha cap joc actiu';
 }
 
 function renderJocs() {
@@ -291,7 +299,13 @@ window.crearJoc = async function() {
 };
 
 window.toggleJocActiu = async function(id, nouEstat) {
-  await updateDoc(doc(db, 'jocs', id), { actiu: !!nouEstat });
+  if (nouEstat) {
+    const batch = writeBatch(db);
+    jocs.forEach(j => batch.update(doc(db, 'jocs', j.id), { actiu: j.id === id }));
+    await batch.commit();
+    return;
+  }
+  await updateDoc(doc(db, 'jocs', id), { actiu: false });
 };
 
 async function carregarConfiguracioJoc() {
@@ -454,7 +468,8 @@ window.mourAvall = async function(id) {
 // ── NOVA PREGUNTA (tab) ───────────────────────────────────────────────
 window.crearNova = async function() {
   const autor    = document.getElementById('nova-autor').value.trim();
-  const jocId    = document.getElementById('nova-joc').value;
+  const jocActiu = getJocActiu();
+  const jocId    = jocActiu?.id || '';
   const pregunta = document.getElementById('nova-pregunta').value.trim();
   const respostes = [
     document.getElementById('nova-r1').value.trim(),
@@ -465,10 +480,10 @@ window.crearNova = async function() {
   const correcta = document.querySelector('input[name="nova-correcta"]:checked')?.value;
 
   if (!autor || !jocId || !pregunta || respostes.some(r => !r) || correcta === undefined) {
-    mostrarToast('Omple tots els camps i marca la resposta correcta.', 'error');
+    mostrarToast(jocId ? 'Omple tots els camps i marca la resposta correcta.' : 'No hi ha cap joc actiu.', 'error');
     return;
   }
-  const joc = jocs.find(j => j.id === jocId);
+  const joc = jocActiu;
   await addDoc(collection(db, 'preguntes'), {
     autor, pregunta, respostes, correcta: parseInt(correcta), jocId, jocNom: joc?.nom || jocId,
     ordre: aprovades.length, createdAt: serverTimestamp()
@@ -480,8 +495,11 @@ window.crearNova = async function() {
 
 // ── MODAL EDICIÓ ──────────────────────────────────────────────────────
 function omplirModal(p, tipus) {
+  const jocActiu = getJocActiu();
   document.getElementById('modal-tipus').value  = tipus;
-  document.getElementById('modal-joc').value = p.jocId || '';
+  document.getElementById('modal-joc').value = jocActiu?.id || '';
+  const modalLabel = document.getElementById('modal-joc-label');
+  if (modalLabel) modalLabel.textContent = jocActiu ? (jocActiu.nom || jocActiu.id) : 'No hi ha cap joc actiu';
   document.getElementById('modal-autor').value    = p.autor    || '';
   document.getElementById('modal-pregunta').value = p.pregunta || '';
   document.getElementById('modal-r1').value = p.respostes[0] || '';
@@ -503,7 +521,8 @@ window.tancarModal = function() {
 
 window.desarModal = async function() {
   const tipus    = document.getElementById('modal-tipus').value;
-  const jocId    = document.getElementById('modal-joc').value;
+  const jocActiu = getJocActiu();
+  const jocId    = jocActiu?.id || '';
   const autor    = document.getElementById('modal-autor').value.trim();
   const pregunta = document.getElementById('modal-pregunta').value.trim();
   const respostes = [
@@ -519,7 +538,7 @@ window.desarModal = async function() {
     return;
   }
 
-  const joc = jocs.find(j => j.id === jocId);
+  const joc = jocActiu;
   const data = { autor, pregunta, respostes, correcta: parseInt(correcta), jocId, jocNom: joc?.nom || jocId };
 
   if (tipus === 'pendent') {

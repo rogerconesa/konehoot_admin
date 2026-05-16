@@ -103,8 +103,9 @@ if ('serviceWorker' in navigator) {
         <form id="form-nova" onsubmit="event.preventDefault(); crearNova();">
 
           <div class="field">
-            <label>Joc</label>
-            <select id="nova-joc"></select>
+            <label>Joc actiu</label>
+            <div id="nova-joc-label" class="joc-actiu-label">Carregant joc actiu...</div>
+            <select id="nova-joc" style="display:none"></select>
           </div>
 
           <div class="field">
@@ -214,8 +215,9 @@ if ('serviceWorker' in navigator) {
     <input type="hidden" id="modal-tipus">
 
     <div class="field">
-      <label>Joc</label>
-      <select id="modal-joc"></select>
+      <label>Joc actiu</label>
+      <div id="modal-joc-label" class="joc-actiu-label">Carregant joc actiu...</div>
+      <select id="modal-joc" style="display:none"></select>
     </div>
 
     <div class="field">

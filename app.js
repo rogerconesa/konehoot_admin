@@ -216,6 +216,7 @@ window.eliminarUsuari = async function(id, nomFallback) {
   const nom = (u?.nom || nomFallback || '').trim();
   if (!nom) return;
   if (!confirm(`Eliminar usuari ${nom}?`)) return;
+  const nomKey = nom.toLowerCase();
   const batch = writeBatch(db);
   if (id) batch.delete(doc(db, 'usuaris', id));
 
@@ -229,6 +230,16 @@ window.eliminarUsuari = async function(id, nomFallback) {
   jugs.forEach(d => batch.delete(d.ref));
 
   await batch.commit();
+
+  // Actualitzacio immediata de UI (sense esperar refresh)
+  usuaris = usuaris.filter(x => (x.id || '') !== id && String(x.nom || '').toLowerCase() !== nomKey);
+  pendents = pendents.filter(x => String(x.autor || '').toLowerCase() !== nomKey);
+  aprovades = aprovades.filter(x => String(x.autor || '').toLowerCase() !== nomKey);
+  renderUsuaris();
+  renderPendents();
+  renderAprovades();
+  actualitzarComptadors();
+
   mostrarToast('Usuari eliminat.', 'ok');
 };
 

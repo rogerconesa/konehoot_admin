@@ -216,7 +216,19 @@ window.eliminarUsuari = async function(id, nomFallback) {
   const nom = (u?.nom || nomFallback || '').trim();
   if (!nom) return;
   if (!confirm(`Eliminar usuari ${nom}?`)) return;
-  if (id) await deleteDoc(doc(db, 'usuaris', id));
+  const batch = writeBatch(db);
+  if (id) batch.delete(doc(db, 'usuaris', id));
+
+  const pPend = await getDocs(query(collection(db, 'preguntes_pendents'), where('autor', '==', nom)));
+  pPend.forEach(d => batch.delete(d.ref));
+
+  const pApr = await getDocs(query(collection(db, 'preguntes'), where('autor', '==', nom)));
+  pApr.forEach(d => batch.delete(d.ref));
+
+  const jugs = await getDocs(query(collection(db, 'partida', 'estat', 'jugadors'), where('nom', '==', nom)));
+  jugs.forEach(d => batch.delete(d.ref));
+
+  await batch.commit();
   mostrarToast('Usuari eliminat.', 'ok');
 };
 

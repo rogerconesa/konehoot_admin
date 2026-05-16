@@ -131,7 +131,7 @@ function actualitzarComptadors() {
   const el = document.getElementById('cnt-jocs');
   if (el) el.textContent = jocs.length;
   const elU = document.getElementById('cnt-usuaris');
-  if (elU) elU.textContent = usuaris.length;
+  if (elU) elU.textContent = getUsuarisVisibles().length;
 }
 
 // ── Canvi de tab ──────────────────────────────────────────────────────
@@ -150,32 +150,55 @@ window.canviarTab = function(tab) {
 function renderUsuaris() {
   const container = document.getElementById('llista-usuaris');
   if (!container) return;
-  if (!usuaris.length) {
+  const visibles = getUsuarisVisibles();
+  if (!visibles.length) {
     container.innerHTML = '<div class="empty-state">Encara no hi ha usuaris registrats</div>';
     return;
   }
-  container.innerHTML = usuaris.map(u => `
+  container.innerHTML = visibles.map(u => `
     <div class="card-pregunta">
       <div class="card-meta">
         <div style="font-family:var(--font-display);font-weight:700">${esc(u.nom || u.id)}</div>
         <div class="card-actions">
-          <button class="btn-icon btn-editar-aprovar" onclick="editarUsuari('${u.id}')" title="Editar">✎</button>
-          <button class="btn-icon btn-rebutjar" onclick="eliminarUsuari('${u.id}')" title="Eliminar">✕</button>
+          <button class="btn-icon btn-editar-aprovar" onclick="editarUsuari('${u.id || ''}', '${escAttr(u.nom || '')}')" title="Editar">✎</button>
+          <button class="btn-icon btn-rebutjar" onclick="eliminarUsuari('${u.id || ''}', '${escAttr(u.nom || '')}')" title="Eliminar">✕</button>
         </div>
       </div>
     </div>
   `).join('');
 }
 
-window.editarUsuari = async function(id) {
+function getUsuarisVisibles() {
+  const map = new Map();
+  usuaris.forEach(u => {
+    const nom = (u.nom || '').trim();
+    if (!nom) return;
+    map.set(nom.toLowerCase(), { id: u.id, nom });
+  });
+  [...pendents, ...aprovades].forEach(p => {
+    const nom = (p.autor || '').trim();
+    if (!nom) return;
+    const key = nom.toLowerCase();
+    if (!map.has(key)) map.set(key, { id: '', nom });
+  });
+  return [...map.values()].sort((a, b) => a.nom.localeCompare(b.nom, 'ca'));
+}
+
+window.editarUsuari = async function(id, nomFallback) {
   const u = usuaris.find(x => x.id === id);
-  if (!u) return;
-  const nouNom = prompt('Nou nom d\'usuari', u.nom || '');
+  const nomOriginal = (u?.nom || nomFallback || '').trim();
+  if (!nomOriginal) return;
+  const nouNom = prompt('Nou nom d\'usuari', nomOriginal);
   if (!nouNom) return;
   const nomNet = nouNom.trim();
   if (!nomNet) return;
-  const nomAntic = u.nom || '';
-  await updateDoc(doc(db, 'usuaris', id), { nom: nomNet, updatedAt: serverTimestamp() });
+  const nomAntic = nomOriginal;
+  if (id) {
+    await updateDoc(doc(db, 'usuaris', id), { nom: nomNet, updatedAt: serverTimestamp() });
+  } else {
+    const idNou = nomNet.toLowerCase().replace(/[^a-z0-9_-]/g, '_') || ('usuari_' + Date.now());
+    await setDoc(doc(db, 'usuaris', idNou), { nom: nomNet, updatedAt: serverTimestamp() }, { merge: true });
+  }
 
   const batch = writeBatch(db);
   const pPend = await getDocs(query(collection(db, 'preguntes_pendents'), where('autor', '==', nomAntic)));
@@ -188,11 +211,12 @@ window.editarUsuari = async function(id) {
   mostrarToast('Usuari actualitzat.', 'ok');
 };
 
-window.eliminarUsuari = async function(id) {
+window.eliminarUsuari = async function(id, nomFallback) {
   const u = usuaris.find(x => x.id === id);
-  if (!u) return;
-  if (!confirm(`Eliminar usuari ${u.nom || id}?`)) return;
-  await deleteDoc(doc(db, 'usuaris', id));
+  const nom = (u?.nom || nomFallback || '').trim();
+  if (!nom) return;
+  if (!confirm(`Eliminar usuari ${nom}?`)) return;
+  if (id) await deleteDoc(doc(db, 'usuaris', id));
   mostrarToast('Usuari eliminat.', 'ok');
 };
 
@@ -502,4 +526,8 @@ function mostrarToast(msg, tipus) {
 // ── UTILS ─────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g, '&#39;');
 }

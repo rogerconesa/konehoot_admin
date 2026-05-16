@@ -1,6 +1,6 @@
 {
-  "name": "Konehoot Admin",
-  "short_name": "Konehoot Admin",
+  "name": "AdminKone",
+  "short_name": "AdminKone",
   "id": "/",
   "start_url": "/",
   "scope": "/",
